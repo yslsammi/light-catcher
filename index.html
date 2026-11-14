@@ -31,19 +31,19 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background-color: var(--bg-color);
+      background-color: #000000;
       color: var(--fg-color);
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", sans-serif;
     }
 
-    /* 主遊戲畫布 */
+    /* 主遊戲畫布（支援純色、雙色、多色背景） */
     #game-area {
       position: relative;
       width: 100vw;
       height: 100vh;
       overflow: hidden;
-      background-color: var(--bg-color);
-      transition: background-color 0.3s ease;
+      background-color: #000000;
+      transition: background 0.3s ease;
     }
 
     /* 頂部低干擾進度條 */
@@ -56,20 +56,22 @@
       gap: 10px;
       z-index: 20;
       pointer-events: none;
-      opacity: 0.75;
+      background: rgba(0, 0, 0, 0.45);
+      padding: 6px 14px;
+      border-radius: 20px;
     }
 
     .progress-dot {
       width: 16px;
       height: 16px;
       border-radius: 50%;
-      border: 3px solid var(--fg-color);
+      border: 3px solid #FFFF00;
       background-color: transparent;
       transition: background-color 0.25s ease, transform 0.25s ease;
     }
 
     .progress-dot.filled {
-      background-color: var(--fg-color);
+      background-color: #FFFF00;
       transform: scale(1.15);
     }
 
@@ -82,8 +84,7 @@
       cursor: pointer;
       z-index: 10;
       transform: translate(-50%, -50%);
-      /* 擴大 25% 觸控容錯區 */
-      padding: 25px;
+      padding: 20px;
     }
 
     .target-graphic {
@@ -93,7 +94,6 @@
       align-items: center;
       justify-content: center;
       animation: breathe 2.2s infinite ease-in-out;
-      filter: drop-shadow(0 0 18px var(--fg-color));
     }
 
     .target-graphic.flash-mode {
@@ -103,17 +103,15 @@
     .target-number {
       position: absolute;
       font-weight: 900;
-      color: var(--bg-color);
       pointer-events: none;
-      text-shadow: none;
     }
 
     /* 序列掃視引導光環 */
     .guide-ring {
       position: absolute;
-      inset: 8px;
+      inset: 4px;
       border-radius: 50%;
-      border: 6px dashed var(--accent-color);
+      border: 7px dashed var(--accent-color);
       animation: spinSlow 6s linear infinite;
       pointer-events: none;
     }
@@ -124,7 +122,7 @@
       transform: translate(-50%, -50%);
       pointer-events: none;
       z-index: 5;
-      opacity: 0.55;
+      opacity: 0.65;
     }
 
     /* 煙花粒子 */
@@ -138,11 +136,12 @@
     /* 溫和誤觸波紋 */
     .miss-ripple {
       position: absolute;
-      width: 60px;
-      height: 60px;
+      width: 68px;
+      height: 68px;
       border-radius: 50%;
-      border: 4px solid var(--fg-color);
-      opacity: 0.4;
+      border: 5px solid #FFFF00;
+      box-shadow: 0 0 8px rgba(0, 0, 0, 0.7);
+      opacity: 0.6;
       transform: translate(-50%, -50%) scale(0.5);
       animation: rippleFade 0.5s ease-out forwards;
       pointer-events: none;
@@ -150,13 +149,13 @@
     }
 
     @keyframes breathe {
-      0%, 100% { transform: scale(0.95); }
-      50% { transform: scale(1.06); }
+      0%, 100% { transform: scale(0.96); }
+      50% { transform: scale(1.04); }
     }
 
     @keyframes peripheralPulse {
-      0%, 100% { opacity: 0.25; transform: scale(0.9); }
-      50% { opacity: 1; transform: scale(1.1); }
+      0%, 100% { opacity: 0.25; transform: scale(0.92); }
+      50% { opacity: 1; transform: scale(1.06); }
     }
 
     @keyframes spinSlow {
@@ -179,7 +178,7 @@
       width: 56px;
       height: 56px;
       border-radius: 50%;
-      background: rgba(128, 128, 128, 0.18);
+      background: rgba(30, 30, 30, 0.45);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -190,7 +189,7 @@
     #teacher-trigger svg.gear-icon {
       width: 28px;
       height: 28px;
-      fill: rgba(255, 255, 255, 0.35);
+      fill: rgba(220, 220, 220, 0.75);
     }
 
     #hold-ring {
@@ -210,7 +209,7 @@
       stroke-dashoffset: 157;
     }
 
-    /* 啟動遮罩畫面 */
+    /* 啟動與休息遮罩畫面 */
     #start-overlay, #break-overlay {
       position: fixed;
       inset: 0;
@@ -229,8 +228,8 @@
       color: #000000;
       border: none;
       border-radius: 28px;
-      padding: 32px 64px;
-      font-size: 2.4rem;
+      padding: 30px 60px;
+      font-size: 2.3rem;
       font-weight: 900;
       cursor: pointer;
       box-shadow: 0 0 35px rgba(255, 255, 0, 0.6);
@@ -241,19 +240,18 @@
       transform: scale(0.96);
     }
 
-    /* 回合休息獎勵畫面 */
     #break-overlay {
       display: none;
     }
 
     .trophy-icon {
-      font-size: 7rem;
+      font-size: 6.5rem;
       margin-bottom: 10px;
       animation: breathe 1.8s infinite ease-in-out;
     }
 
     .break-title {
-      font-size: 2.6rem;
+      font-size: 2.5rem;
       font-weight: 900;
       color: #FFFF00;
       margin: 8px 0;
@@ -286,7 +284,7 @@
       background-color: var(--panel-bg);
       color: var(--panel-text);
       width: 100%;
-      max-width: 760px;
+      max-width: 820px;
       max-height: 92vh;
       overflow-y: auto;
       border-radius: 20px;
@@ -347,6 +345,13 @@
       color: #EFEFEF;
     }
 
+    .sub-label {
+      font-size: 0.85rem;
+      color: #AAAAAA;
+      margin: 6px 0 6px 0;
+      font-weight: 600;
+    }
+
     .btn-group {
       display: flex;
       flex-wrap: wrap;
@@ -358,16 +363,39 @@
       color: #FFFFFF;
       border: 2px solid #48484D;
       border-radius: 10px;
-      padding: 10px 14px;
-      font-size: 0.95rem;
+      padding: 8px 13px;
+      font-size: 0.92rem;
       font-weight: 600;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
     }
 
     .opt-btn.active {
       background: #FFFF00;
       color: #000000;
       border-color: #FFFF00;
+    }
+
+    .color-swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid #888;
+      display: inline-block;
+      flex-shrink: 0;
+    }
+
+    #contrast-warning {
+      display: none;
+      background: #5C1A1A;
+      color: #FFD6D6;
+      border: 1px solid #FF6B6B;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      margin-top: 8px;
     }
 
     .panel-footer {
@@ -477,44 +505,84 @@
         </div>
       </div>
 
-      <!-- 2. 目標尺寸 -->
+      <!-- 2. 目標尺寸（依螢幕比例計算，最大佔畫面 1/3） -->
       <div class="setting-group">
-        <label>2. 目標圖案尺寸</label>
-        <div class="btn-group" data-setting="size">
-          <button class="opt-btn" data-val="220">超大 (220px)</button>
-          <button class="opt-btn active" data-val="165">大 (165px)</button>
-          <button class="opt-btn" data-val="120">中 (120px)</button>
-          <button class="opt-btn" data-val="85">小 (85px)</button>
+        <label>2. 目標圖案大小（依螢幕短邊比例自動縮放）</label>
+        <div class="btn-group" data-setting="sizeRatio">
+          <button class="opt-btn active" data-val="0.33">超大（佔畫面 1/3）</button>
+          <button class="opt-btn" data-val="0.25">大（佔畫面 1/4）</button>
+          <button class="opt-btn" data-val="0.17">中（佔畫面 1/6）</button>
+          <button class="opt-btn" data-val="0.11">小（佔畫面 1/9）</button>
         </div>
       </div>
 
-      <!-- 3. 高對比配色主題 -->
+      <!-- 3. 背景顏色選擇（支援純色、雙色、多色） -->
       <div class="setting-group">
-        <label>3. 高對比配色主題（適應畏光或視網膜病變）</label>
-        <div class="btn-group" data-setting="theme">
-          <button class="opt-btn active" data-val="black-yellow">黑底鮮黃（高對比首選）</button>
-          <button class="opt-btn" data-val="black-green">黑底螢光綠</button>
-          <button class="opt-btn" data-val="black-white">黑底純白</button>
-          <button class="opt-btn" data-val="white-black">白底純黑（適合特定畏光）</button>
-          <button class="opt-btn" data-val="blue-yellow">深藍底鮮黃</button>
+        <label>3. 背景顏色（支援純色、雙色、多色）</label>
+        
+        <div class="sub-label">純色背景：</div>
+        <div class="btn-group" data-setting="bgMode">
+          <button class="opt-btn active" data-val="solid-black"><span class="color-swatch" style="background:#000000"></span>純黑</button>
+          <button class="opt-btn" data-val="solid-white"><span class="color-swatch" style="background:#FFFFFF"></span>純白</button>
+          <button class="opt-btn" data-val="solid-navy"><span class="color-swatch" style="background:#001845"></span>深藍</button>
+          <button class="opt-btn" data-val="solid-gray"><span class="color-swatch" style="background:#26262A"></span>深灰</button>
+          <button class="opt-btn" data-val="solid-cream"><span class="color-swatch" style="background:#FFF8DC"></span>柔光米黃</button>
+        </div>
+
+        <div class="sub-label">雙色視覺刺激背景：</div>
+        <div class="btn-group" data-setting="bgMode">
+          <button class="opt-btn" data-val="dual-checker"><span class="color-swatch" style="background:linear-gradient(135deg,#000 50%,#FFF 50%)"></span>黑白棋盤格</button>
+          <button class="opt-btn" data-val="dual-stripes"><span class="color-swatch" style="background:linear-gradient(90deg,#000 50%,#FFD600 50%)"></span>黑黃雙色寬條</button>
+          <button class="opt-btn" data-val="dual-split"><span class="color-swatch" style="background:linear-gradient(90deg,#002868 50%,#E8F1F5 50%)"></span>藍白左右雙色</button>
+        </div>
+
+        <div class="sub-label">多色背景（進階視覺區辨）：</div>
+        <div class="btn-group" data-setting="bgMode">
+          <button class="opt-btn" data-val="multi-rainbow"><span class="color-swatch" style="background:linear-gradient(135deg,#FF9AA2,#FFDAC1,#E2F0CB,#B5EAD7,#C7CEEA)"></span>柔和多色漸層</button>
+          <button class="opt-btn" data-val="multi-dots"><span class="color-swatch" style="background:radial-gradient(circle,#FF595E 30%,#1982C4 35%,#1A1A2E 70%)"></span>深底彩色大圓點</button>
         </div>
       </div>
 
-      <!-- 4. 目標圖案選擇 -->
+      <!-- 4. 目標圖案顏色選擇（12 種高飽和色 + 隨機變色） -->
       <div class="setting-group">
-        <label>4. 目標圖案樣式</label>
+        <label>4. 目標圖案顏色（共 12 色及隨機輪換）</label>
+        <div class="btn-group" data-setting="fgColor">
+          <button class="opt-btn active" data-val="#FFFF00"><span class="color-swatch" style="background:#FFFF00"></span>鮮黃</button>
+          <button class="opt-btn" data-val="#00FF00"><span class="color-swatch" style="background:#00FF00"></span>螢光綠</button>
+          <button class="opt-btn" data-val="#FF2A2A"><span class="color-swatch" style="background:#FF2A2A"></span>純紅</button>
+          <button class="opt-btn" data-val="#FF8800"><span class="color-swatch" style="background:#FF8800"></span>亮橙</button>
+          <button class="opt-btn" data-val="#FF1493"><span class="color-swatch" style="background:#FF1493"></span>螢光粉紅</button>
+          <button class="opt-btn" data-val="#B829FF"><span class="color-swatch" style="background:#B829FF"></span>亮紫</button>
+          <button class="opt-btn" data-val="#00D4FF"><span class="color-swatch" style="background:#00D4FF"></span>天藍</button>
+          <button class="opt-btn" data-val="#0055FF"><span class="color-swatch" style="background:#0055FF"></span>寶藍</button>
+          <button class="opt-btn" data-val="#00E5B0"><span class="color-swatch" style="background:#00E5B0"></span>薄荷青綠</button>
+          <button class="opt-btn" data-val="#FFFFFF"><span class="color-swatch" style="background:#FFFFFF"></span>純白</button>
+          <button class="opt-btn" data-val="#000000"><span class="color-swatch" style="background:#000000"></span>純黑</button>
+          <button class="opt-btn" data-val="#8B4513"><span class="color-swatch" style="background:#8B4513"></span>深啡</button>
+          <button class="opt-btn" data-val="random"><span class="color-swatch" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"></span>每題隨機顏色</button>
+        </div>
+        <div id="contrast-warning">⚠️ 提示：目前選擇的「圖案顏色」與「背景顏色」相同或過於接近，建議更換顏色以確保高對比！</div>
+      </div>
+
+      <!-- 5. 目標圖案選擇（幾何圖形 + 高對比生活化圖案） -->
+      <div class="setting-group">
+        <label>5. 目標圖案樣式（幾何及生活化高對比圖案）</label>
         <div class="btn-group" data-setting="shape">
-          <button class="opt-btn active" data-val="random">隨機輪換（推薦）</button>
-          <button class="opt-btn" data-val="sun">發光太陽</button>
-          <button class="opt-btn" data-val="smiley">笑臉太陽</button>
-          <button class="opt-btn" data-val="star">閃亮星星</button>
-          <button class="opt-btn" data-val="heart">大愛心</button>
+          <button class="opt-btn active" data-val="random">隨機輪換（全部 8 款）</button>
+          <button class="opt-btn" data-val="sun">☀️ 發光太陽</button>
+          <button class="opt-btn" data-val="smiley">😊 笑臉太陽</button>
+          <button class="opt-btn" data-val="star">⭐ 閃亮星星</button>
+          <button class="opt-btn" data-val="heart">❤️ 大愛心</button>
+          <button class="opt-btn" data-val="apple">🍎 蘋果</button>
+          <button class="opt-btn" data-val="car">🚗 汽車</button>
+          <button class="opt-btn" data-val="flower">🌸 花朵</button>
+          <button class="opt-btn" data-val="butterfly">🦋 蝴蝶</button>
         </div>
       </div>
 
-      <!-- 5. 回合目標數量（自動暫停休息） -->
+      <!-- 6. 回合目標數量（自動暫停休息） -->
       <div class="setting-group">
-        <label>5. 每回合目標數量（完成後暫停獎勵）</label>
+        <label>6. 每回合目標數量（完成後暫停獎勵）</label>
         <div class="btn-group" data-setting="roundLimit">
           <button class="opt-btn" data-val="5">每 5 個暫停</button>
           <button class="opt-btn active" data-val="10">每 10 個暫停</button>
@@ -523,9 +591,9 @@
         </div>
       </div>
 
-      <!-- 6. 視野區域偏重（針對偏盲或視野缺損） -->
+      <!-- 7. 視野區域偏重 -->
       <div class="setting-group">
-        <label>6. 視野區域偏重（針對偏盲或視野缺損訓練）</label>
+        <label>7. 視野區域偏重（針對偏盲或視野缺損訓練）</label>
         <div class="btn-group" data-setting="fieldBias">
           <button class="opt-btn active" data-val="all">全螢幕平均</button>
           <button class="opt-btn" data-val="left">左側視野優先</button>
@@ -535,9 +603,9 @@
         </div>
       </div>
 
-      <!-- 7. 休息畫面保護與音效 -->
+      <!-- 8. 休息畫面保護 -->
       <div class="setting-group">
-        <label>7. 休息畫面解鎖保護</label>
+        <label>8. 休息畫面解鎖保護</label>
         <div class="btn-group" data-setting="teacherLock">
           <button class="opt-btn active" data-val="false">學生可直接點擊繼續</button>
           <button class="opt-btn" data-val="true">需老師長按 1.5 秒解鎖</button>
@@ -555,8 +623,9 @@
     // === 遊戲狀態與預設參數 ===
     const state = {
       difficulty: 1,         // 1~5
-      size: 165,             // px
-      theme: 'black-yellow',
+      sizeRatio: 0.33,       // 佔螢幕短邊比例（0.33 = 1/3 畫面）
+      bgMode: 'solid-black',
+      fgColor: '#FFFF00',
       shape: 'random',
       roundLimit: 10,        // 0 = unlimited
       fieldBias: 'all',
@@ -576,21 +645,130 @@
       isPaused: true
     };
 
-    const themes = {
-      'black-yellow': { bg: '#000000', fg: '#FFFF00', accent: '#00FF00', distractor: 'rgba(255,255,255,0.35)' },
-      'black-green':  { bg: '#000000', fg: '#00FF00', accent: '#FFFF00', distractor: 'rgba(255,255,255,0.35)' },
-      'black-white':  { bg: '#000000', fg: '#FFFFFF', accent: '#FFFF00', distractor: 'rgba(255,255,255,0.3)' },
-      'white-black':  { bg: '#FFFFFF', fg: '#000000', accent: '#D90000', distractor: 'rgba(0,0,0,0.28)' },
-      'blue-yellow':  { bg: '#001845', fg: '#FFFF00', accent: '#00FF88', distractor: 'rgba(255,255,255,0.35)' }
-    };
-
-    const availableShapes = ['sun', 'smiley', 'star', 'heart'];
+    const availableShapes = ['sun', 'smiley', 'star', 'heart', 'apple', 'car', 'flower', 'butterfly'];
+    const randomColorPool = ['#FFFF00', '#00FF00', '#FF2A2A', '#FF8800', '#FF1493', '#B829FF', '#00D4FF', '#00E5B0', '#FFFFFF'];
     let lastShape = '';
+    let lastColor = '';
 
     const gameArea = document.getElementById('game-area');
     const progressBarContainer = document.getElementById('progress-bar-container');
 
-    // === Web Audio API 音效合成器（無需外部音檔） ===
+    // 依螢幕短邊動態計算像素尺寸（最大佔畫面 1/3）
+    function getTargetPixelSize() {
+      const minDim = Math.min(window.innerWidth, window.innerHeight);
+      return Math.round(minDim * state.sizeRatio);
+    }
+
+    // 取得實際圖案顏色（支援每題隨機顏色）
+    function getCurrentFgColor() {
+      if (state.fgColor !== 'random') return state.fgColor;
+      const pool = randomColorPool.filter(c => c !== lastColor);
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      lastColor = chosen;
+      return chosen;
+    }
+
+    // 判斷背景是否為淺色系
+    function isLightBgMode(mode) {
+      return ['solid-white', 'solid-cream', 'multi-rainbow'].includes(mode);
+    }
+
+    // 判斷是否為雙色或多色背景（需加強目標粗外框以保持高辨識度）
+    function isComplexBgMode(mode) {
+      return mode.startsWith('dual-') || mode.startsWith('multi-');
+    }
+
+    // === 套用純色、雙色或多色背景 ===
+    function applyColors() {
+      const mode = state.bgMode;
+      gameArea.style.backgroundImage = 'none';
+      gameArea.style.backgroundSize = 'auto';
+      gameArea.style.backgroundPosition = '0 0';
+
+      switch (mode) {
+        case 'solid-white':
+          gameArea.style.backgroundColor = '#FFFFFF';
+          break;
+        case 'solid-navy':
+          gameArea.style.backgroundColor = '#001845';
+          break;
+        case 'solid-gray':
+          gameArea.style.backgroundColor = '#26262A';
+          break;
+        case 'solid-cream':
+          gameArea.style.backgroundColor = '#FFF8DC';
+          break;
+        case 'dual-checker':
+          gameArea.style.backgroundColor = '#FFFFFF';
+          gameArea.style.backgroundImage =
+            'linear-gradient(45deg, #000000 25%, transparent 25%), ' +
+            'linear-gradient(-45deg, #000000 25%, transparent 25%), ' +
+            'linear-gradient(45deg, transparent 75%, #000000 75%), ' +
+            'linear-gradient(-45deg, transparent 75%, #000000 75%)';
+          gameArea.style.backgroundSize = '160px 160px';
+          gameArea.style.backgroundPosition = '0 0, 0 80px, 80px -80px, -80px 0';
+          break;
+        case 'dual-stripes':
+          gameArea.style.backgroundColor = '#000000';
+          gameArea.style.backgroundImage =
+            'repeating-linear-gradient(90deg, #000000 0px, #000000 90px, #3A3200 90px, #3A3200 180px)';
+          break;
+        case 'dual-split':
+          gameArea.style.backgroundColor = '#002868';
+          gameArea.style.backgroundImage =
+            'linear-gradient(90deg, #002868 0%, #002868 50%, #E8F1F5 50%, #E8F1F5 100%)';
+          break;
+        case 'multi-rainbow':
+          gameArea.style.backgroundColor = '#E2F0CB';
+          gameArea.style.backgroundImage =
+            'linear-gradient(135deg, #FF9AA2 0%, #FFDAC1 25%, #E2F0CB 50%, #B5EAD7 75%, #C7CEEA 100%)';
+          break;
+        case 'multi-dots':
+          gameArea.style.backgroundColor = '#121324';
+          gameArea.style.backgroundImage =
+            'radial-gradient(#FF595E 26px, transparent 27px), ' +
+            'radial-gradient(#1982C4 26px, transparent 27px), ' +
+            'radial-gradient(#8AC926 22px, transparent 23px)';
+          gameArea.style.backgroundSize = '220px 220px';
+          gameArea.style.backgroundPosition = '0 0, 110px 110px, 55px 165px';
+          break;
+        case 'solid-black':
+        default:
+          gameArea.style.backgroundColor = '#000000';
+          break;
+      }
+
+      const lightBg = isLightBgMode(mode);
+      const accent = lightBg ? '#D90000' : '#00FF00';
+      const distractor = lightBg ? 'rgba(0, 0, 0, 0.32)' : 'rgba(255, 255, 255, 0.35)';
+
+      document.documentElement.style.setProperty('--accent-color', accent);
+      document.documentElement.style.setProperty('--distractor-color', distractor);
+
+      // 同色警告檢查
+      const warnEl = document.getElementById('contrast-warning');
+      const solidColorMap = {
+        'solid-black': '#000000',
+        'solid-white': '#FFFFFF',
+        'solid-navy': '#001845',
+        'solid-gray': '#26262A',
+        'solid-cream': '#FFF8DC'
+      };
+      const currentSolidBg = solidColorMap[mode];
+      const lowPairs = [
+        ['#FFFFFF', '#FFF8DC'], ['#FFF8DC', '#FFFFFF'],
+        ['#FFFF00', '#FFF8DC'], ['#FFF8DC', '#FFFF00'],
+        ['#000000', '#26262A'], ['#26262A', '#000000'],
+        ['#000000', '#001845'], ['#0055FF', '#001845']
+      ];
+      const isSameOrLow = currentSolidBg && state.fgColor !== 'random' && (
+        currentSolidBg === state.fgColor ||
+        lowPairs.some(([a, b]) => a === currentSolidBg && b === state.fgColor)
+      );
+      warnEl.style.display = isSameOrLow ? 'block' : 'none';
+    }
+
+    // === Web Audio API 音效合成器 ===
     let audioCtx = null;
 
     function initAudio() {
@@ -602,15 +780,14 @@
       }
     }
 
-    // 目標出現時的柔和提示音
     function playSpawnSound() {
       if (!audioCtx) return;
       const now = audioCtx.currentTime;
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
       osc.type = 'sine';
-      osc.frequency.setValueAtTime(523.25, now); // C5
-      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+      osc.frequency.setValueAtTime(523.25, now);
+      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15);
       gain.gain.setValueAtTime(0.15, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
       osc.connect(gain);
@@ -619,10 +796,9 @@
       osc.stop(now + 0.35);
     }
 
-    // 成功擊中時的歡快和弦音效
     function playSuccessSound() {
       if (!audioCtx) return;
-      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+      const notes = [523.25, 659.25, 783.99, 1046.50];
       notes.forEach((freq, idx) => {
         const now = audioCtx.currentTime + idx * 0.06;
         const osc = audioCtx.createOscillator();
@@ -638,7 +814,6 @@
       });
     }
 
-    // 回合完成勝利號角
     function playFanfareSound() {
       if (!audioCtx) return;
       const melody = [
@@ -662,7 +837,6 @@
       });
     }
 
-    // 語音鼓勵
     function speakPraise(customText) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
@@ -675,8 +849,8 @@
       window.speechSynthesis.speak(utter);
     }
 
-    // === 繪製高對比 SVG 圖案 ===
-    function getShapeSVG(shapeType, fgColor, bgColor) {
+    // === 繪製高對比幾何化 SVG 圖案（含太陽、笑臉、星星、愛心、蘋果、汽車、花朵、蝴蝶） ===
+    function getShapeSVG(shapeType, fgColor) {
       let chosen = shapeType;
       if (chosen === 'random') {
         const pool = availableShapes.filter(s => s !== lastShape);
@@ -684,41 +858,112 @@
       }
       lastShape = chosen;
 
+      const isDarkFg = ['#000000', '#001845', '#0055FF', '#8B4513'].includes(fgColor.toUpperCase());
+      const detailColor = isDarkFg ? '#FFFFFF' : '#000000';
+      const isComplex = isComplexBgMode(state.bgMode);
+      const outlineStroke = isComplex ? detailColor : 'none';
+      const outlineWidth = isComplex ? '5' : '0';
+
       switch (chosen) {
         case 'smiley':
           return `
-            <svg viewBox="0 0 120 120" width="100%" height="100%">
-              <circle cx="60" cy="60" r="52" fill="${fgColor}" />
-              <circle cx="42" cy="46" r="7" fill="${bgColor}" />
-              <circle cx="78" cy="46" r="7" fill="${bgColor}" />
-              <path d="M 36 68 Q 60 94 84 68" fill="none" stroke="${bgColor}" stroke-width="9" stroke-linecap="round" />
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <circle cx="62" cy="62" r="52" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <circle cx="44" cy="48" r="7" fill="${detailColor}" />
+              <circle cx="80" cy="48" r="7" fill="${detailColor}" />
+              <path d="M 38 70 Q 62 96 86 70" fill="none" stroke="${detailColor}" stroke-width="9" stroke-linecap="round" />
             </svg>`;
         case 'star':
           return `
-            <svg viewBox="0 0 120 120" width="100%" height="100%">
-              <polygon points="60,8 75,42 112,46 84,71 92,108 60,89 28,108 36,71 8,46 45,42"
-                fill="${fgColor}" stroke="${fgColor}" stroke-width="4" stroke-linejoin="round" />
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <polygon points="62,10 77,44 114,48 86,73 94,110 62,91 30,110 38,73 10,48 47,44"
+                fill="${fgColor}" stroke="${outlineStroke !== 'none' ? outlineStroke : fgColor}" stroke-width="${outlineStroke !== 'none' ? 5 : 4}" stroke-linejoin="round" />
             </svg>`;
         case 'heart':
           return `
-            <svg viewBox="0 0 120 120" width="100%" height="100%">
-              <path d="M60 104 C20 76, 6 48, 24 26 C38 10, 56 20, 60 32 C64 20, 82 10, 96 26 C114 48, 100 76, 60 104 Z"
-                fill="${fgColor}" />
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <path d="M62 106 C22 78, 8 50, 26 28 C40 12, 58 22, 62 34 C66 22, 84 12, 98 28 C116 50, 102 78, 62 106 Z"
+                fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
+            </svg>`;
+        case 'apple':
+          // 高對比幾何化蘋果（大圓潤果身 + 粗果柄 + 大葉片 + 高光弧線）
+          return `
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <!-- 果身 -->
+              <path d="M62 38 C46 28, 22 36, 22 64 C22 92, 42 112, 56 112 C60 112, 62 109, 62 109 C62 109, 64 112, 68 112 C82 112, 102 92, 102 64 C102 36, 78 28, 62 38 Z"
+                fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
+              <!-- 粗果柄 -->
+              <path d="M62 36 L62 16" stroke="${fgColor}" stroke-width="9" stroke-linecap="round" />
+              <!-- 大幾何葉片 -->
+              <path d="M64 24 C74 10, 94 12, 96 24 C84 32, 70 30, 64 24 Z"
+                fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
+              <!-- 內部粗高光識別線 -->
+              <path d="M36 56 C34 68, 38 80, 44 88" fill="none" stroke="${detailColor}" stroke-width="7" stroke-linecap="round" />
+            </svg>`;
+        case 'car':
+          // 高對比幾何化汽車（圓頂車廂 + 寬車身 + 雙鏤空車窗 + 雙大輪胎）
+          return `
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <!-- 車身與車頂一體幾何輪廓 -->
+              <path d="M24 58 L34 32 C37 26, 42 24, 48 24 L76 24 C82 24, 87 26, 90 32 L100 58 L110 62 C114 64, 116 68, 116 74 L116 88 C116 92, 112 96, 108 96 L16 96 C12 96, 8 92, 8 88 L8 74 C8 68, 10 64, 14 62 Z"
+                fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
+              <!-- 左右幾何車窗（高對比鏤空） -->
+              <polygon points="42,33 58,33 58,54 34,54" fill="${detailColor}" />
+              <polygon points="66,33 82,33 90,54 66,54" fill="${detailColor}" />
+              <!-- 左右大車輪（外圈 + 內軸） -->
+              <circle cx="34" cy="96" r="16" fill="${detailColor}" />
+              <circle cx="34" cy="96" r="8" fill="${fgColor}" />
+              <circle cx="90" cy="96" r="16" fill="${detailColor}" />
+              <circle cx="90" cy="96" r="8" fill="${fgColor}" />
+            </svg>`;
+        case 'flower':
+          // 高對比幾何化五瓣花朵（大圓花瓣 + 粗對比花蕊）
+          return `
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <g fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}">
+                <circle cx="62" cy="28" r="22" />
+                <circle cx="94" cy="52" r="22" />
+                <circle cx="82" cy="90" r="22" />
+                <circle cx="42" cy="90" r="22" />
+                <circle cx="30" cy="52" r="22" />
+              </g>
+              <!-- 實心花心連接處 -->
+              <circle cx="62" cy="62" r="26" fill="${fgColor}" />
+              <!-- 高對比花蕊 -->
+              <circle cx="62" cy="62" r="16" fill="${detailColor}" />
+            </svg>`;
+        case 'butterfly':
+          // 高對比幾何化蝴蝶（四片大圓翅 + 粗身體觸角 + 翅膀對稱圓斑）
+          return `
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <!-- 上左右大翅膀 -->
+              <circle cx="36" cy="44" r="26" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <circle cx="88" cy="44" r="26" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <!-- 下左右小翅膀 -->
+              <circle cx="40" cy="84" r="20" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <circle cx="84" cy="84" r="20" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <!-- 翅膀對稱圓點標記 -->
+              <circle cx="34" cy="42" r="8" fill="${detailColor}" />
+              <circle cx="90" cy="42" r="8" fill="${detailColor}" />
+              <!-- 中央粗身體 -->
+              <rect x="55" y="24" width="14" height="78" rx="7" fill="${detailColor}" />
+              <!-- 粗觸角 -->
+              <path d="M58 26 L44 10 M66 26 L80 10" stroke="${fgColor}" stroke-width="7" stroke-linecap="round" />
             </svg>`;
         case 'sun':
         default:
           return `
-            <svg viewBox="0 0 120 120" width="100%" height="100%">
-              <circle cx="60" cy="60" r="36" fill="${fgColor}" />
-              <g stroke="${fgColor}" stroke-width="8" stroke-linecap="round">
-                <line x1="60" y1="6" x2="60" y2="18" />
-                <line x1="60" y1="102" x2="60" y2="114" />
-                <line x1="6" y1="60" x2="18" y2="60" />
-                <line x1="102" y1="60" x2="114" y2="60" />
-                <line x1="22" y1="22" x2="30" y2="30" />
-                <line x1="90" y1="90" x2="98" y2="98" />
-                <line x1="98" y1="22" x2="90" y2="30" />
-                <line x1="30" y1="90" x2="22" y2="98" />
+            <svg viewBox="0 0 124 124" width="100%" height="100%">
+              <circle cx="62" cy="62" r="35" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
+              <g stroke="${fgColor}" stroke-width="9" stroke-linecap="round">
+                <line x1="62" y1="8" x2="62" y2="20" />
+                <line x1="62" y1="104" x2="62" y2="116" />
+                <line x1="8" y1="62" x2="20" y2="62" />
+                <line x1="104" y1="62" x2="116" y2="62" />
+                <line x1="24" y1="24" x2="32" y2="32" />
+                <line x1="92" y1="92" x2="100" y2="100" />
+                <line x1="100" y1="24" x2="92" y2="32" />
+                <line x1="32" y1="92" x2="24" y2="100" />
               </g>
             </svg>`;
       }
@@ -736,19 +981,14 @@
       }
     }
 
-    // === 套用主題色彩 ===
-    function applyTheme() {
-      const t = themes[state.theme];
-      document.documentElement.style.setProperty('--bg-color', t.bg);
-      document.documentElement.style.setProperty('--fg-color', t.fg);
-      document.documentElement.style.setProperty('--accent-color', t.accent);
-      document.documentElement.style.setProperty('--distractor-color', t.distractor);
-    }
-
     // === 更新頂部回合進度點 ===
     function renderProgressDots() {
       progressBarContainer.innerHTML = '';
-      if (state.roundLimit <= 0) return;
+      if (state.roundLimit <= 0) {
+        progressBarContainer.style.display = 'none';
+        return;
+      }
+      progressBarContainer.style.display = 'flex';
       for (let i = 0; i < state.roundLimit; i++) {
         const dot = document.createElement('div');
         dot.className = 'progress-dot' + (i < state.roundHits ? ' filled' : '');
@@ -756,19 +996,20 @@
       }
     }
 
-    // === 計算符合視野偏重與安全邊界的座標 ===
+    // === 計算符合視野偏重與超大圖案安全邊界的座標 ===
     function getRandomPosition(existingPositions = [], forceEdge = false) {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      const margin = state.size * 0.75 + 24;
+      const targetSize = getTargetPixelSize();
+      const margin = targetSize * 0.55 + 24;
 
-      let minX = margin, maxX = w - margin;
-      let minY = margin + 25, maxY = h - margin;
+      let minX = margin, maxX = Math.max(margin + 10, w - margin);
+      let minY = margin + 25, maxY = Math.max(margin + 35, h - margin);
 
-      if (state.fieldBias === 'left') maxX = Math.max(minX + 40, w * 0.48);
-      if (state.fieldBias === 'right') minX = Math.min(maxX - 40, w * 0.52);
-      if (state.fieldBias === 'top') maxY = Math.max(minY + 40, h * 0.48);
-      if (state.fieldBias === 'bottom') minY = Math.min(maxY - 40, h * 0.52);
+      if (state.fieldBias === 'left') maxX = Math.max(minX + 20, w * 0.48);
+      if (state.fieldBias === 'right') minX = Math.min(maxX - 20, w * 0.52);
+      if (state.fieldBias === 'top') maxY = Math.max(minY + 20, h * 0.48);
+      if (state.fieldBias === 'bottom') minY = Math.min(maxY - 20, h * 0.52);
 
       let bestX = (minX + maxX) / 2;
       let bestY = (minY + maxY) / 2;
@@ -777,16 +1018,15 @@
         let x = minX + Math.random() * Math.max(10, maxX - minX);
         let y = minY + Math.random() * Math.max(10, maxY - minY);
 
-        // 難度 5：周邊視野閃現，推向四邊外圍
         if (forceEdge) {
           const edge = Math.floor(Math.random() * 4);
-          if (edge === 0) x = minX + Math.random() * (w * 0.15);
-          else if (edge === 1) x = maxX - Math.random() * (w * 0.15);
-          else if (edge === 2) y = minY + Math.random() * (h * 0.15);
-          else y = maxY - Math.random() * (h * 0.15);
+          if (edge === 0) x = minX + Math.random() * (w * 0.12);
+          else if (edge === 1) x = maxX - Math.random() * (w * 0.12);
+          else if (edge === 2) y = minY + Math.random() * (h * 0.12);
+          else y = maxY - Math.random() * (h * 0.12);
         }
 
-        const tooClose = existingPositions.some(p => Math.hypot(p.x - x, p.y - y) < state.size * 1.35);
+        const tooClose = existingPositions.some(p => Math.hypot(p.x - x, p.y - y) < targetSize * 1.15);
         if (!tooClose) {
           bestX = x;
           bestY = y;
@@ -812,19 +1052,21 @@
       if (state.isPaused) return;
       clearBoard();
 
-      const t = themes[state.theme];
       const occupied = [];
+      const targetSize = getTargetPixelSize();
+      const distractorColor = getComputedStyle(document.documentElement).getPropertyValue('--distractor-color').trim();
       state.spawnTimestamp = performance.now();
       playSpawnSound();
 
-      // 難度 4：序列雙重掃視（由左至右出現 1 號與 2 號目標）
+      // 難度 4：序列雙重掃視
       if (state.difficulty === 4) {
         const w = window.innerWidth;
         const h = window.innerHeight;
-        const yBase = h * (0.35 + Math.random() * 0.3);
+        const margin = targetSize * 0.55 + 20;
+        const yBase = Math.min(h - margin, Math.max(margin + 30, h * (0.35 + Math.random() * 0.3)));
         const positions = [
-          { x: Math.max(state.size, w * 0.25), y: yBase },
-          { x: Math.min(w - state.size, w * 0.75), y: yBase + (Math.random() * 120 - 60) }
+          { x: Math.max(margin, w * 0.25), y: yBase },
+          { x: Math.min(w - margin, w * 0.75), y: yBase }
         ];
 
         positions.forEach((pos, idx) => {
@@ -844,11 +1086,11 @@
           occupied.push(dPos);
           const dEl = document.createElement('div');
           dEl.className = 'distractor-item';
-          dEl.style.width = `${state.size * 0.85}px`;
-          dEl.style.height = `${state.size * 0.85}px`;
+          dEl.style.width = `${targetSize * 0.75}px`;
+          dEl.style.height = `${targetSize * 0.75}px`;
           dEl.style.left = `${dPos.x}px`;
           dEl.style.top = `${dPos.y}px`;
-          dEl.innerHTML = getDistractorSVG(i % 2, t.distractor);
+          dEl.innerHTML = getDistractorSVG(i % 2, distractorColor);
           gameArea.appendChild(dEl);
         }
         return;
@@ -859,7 +1101,6 @@
       const pos = getRandomPosition(occupied, isEdge);
       const targetObj = createTargetElement(pos.x, pos.y, 0, false, isEdge);
 
-      // 難度 2：動態視覺追視（緩慢平滑移動）
       if (state.difficulty === 2) {
         startTrackingMotion(targetObj);
       }
@@ -867,10 +1108,11 @@
 
     // 建立單個可互動目標 DOM
     function createTargetElement(x, y, seqIdx = 0, showSequenceUI = false, flashMode = false) {
-      const t = themes[state.theme];
+      const targetSize = getTargetPixelSize();
+      const currentColor = getCurrentFgColor();
       const wrapper = document.createElement('div');
       wrapper.className = 'target-wrapper';
-      const totalSize = state.size + 50; // 包含擴大觸控區
+      const totalSize = targetSize + 40;
       wrapper.style.width = `${totalSize}px`;
       wrapper.style.height = `${totalSize}px`;
       wrapper.style.left = `${x}px`;
@@ -878,13 +1120,18 @@
 
       const graphic = document.createElement('div');
       graphic.className = 'target-graphic' + (flashMode ? ' flash-mode' : '');
-      graphic.innerHTML = getShapeSVG(state.shape, t.fg, t.bg);
+      graphic.style.filter = isComplexBgMode(state.bgMode)
+        ? `drop-shadow(0 0 12px rgba(0,0,0,0.85))`
+        : `drop-shadow(0 0 16px ${currentColor})`;
+      graphic.innerHTML = getShapeSVG(state.shape, currentColor);
       wrapper.appendChild(graphic);
 
       if (showSequenceUI) {
+        const isDarkFg = ['#000000', '#001845', '#0055FF', '#8B4513'].includes(currentColor.toUpperCase());
         const num = document.createElement('div');
         num.className = 'target-number';
-        num.style.fontSize = `${state.size * 0.36}px`;
+        num.style.color = isDarkFg ? '#FFFFFF' : '#000000';
+        num.style.fontSize = `${targetSize * 0.34}px`;
         num.textContent = seqIdx + 1;
         wrapper.appendChild(num);
 
@@ -897,7 +1144,7 @@
         }
       }
 
-      const targetData = { el: wrapper, x, y, seqIdx, hit: false };
+      const targetData = { el: wrapper, x, y, seqIdx, hit: false, color: currentColor };
       state.activeTargets.push(targetData);
 
       const handleHit = (e) => {
@@ -907,7 +1154,6 @@
       };
 
       wrapper.addEventListener('pointerdown', handleHit);
-      // 難度 2 追視模式亦支援手指滑過觸發
       if (state.difficulty === 2) {
         wrapper.addEventListener('pointerenter', (e) => {
           if (e.buttons > 0) handleHit(e);
@@ -920,7 +1166,8 @@
 
     // 難度 2 追視移動動畫
     function startTrackingMotion(targetObj) {
-      const margin = state.size * 0.8 + 20;
+      const targetSize = getTargetPixelSize();
+      const margin = targetSize * 0.55 + 20;
       const w = window.innerWidth;
       const h = window.innerHeight;
       let vx = (Math.random() > 0.5 ? 1 : -1) * 1.65;
@@ -945,17 +1192,15 @@
     function onTargetHit(targetData) {
       if (targetData.hit || state.isPaused) return;
 
-      // 若為序列模式，必須按順序點擊
       if (state.difficulty === 4 && targetData.seqIdx !== state.sequenceIndex) {
         return;
       }
 
       targetData.hit = true;
-      spawnCelebrationParticles(targetData.x, targetData.y);
+      spawnCelebrationParticles(targetData.x, targetData.y, targetData.color);
       playSuccessSound();
       if (navigator.vibrate) navigator.vibrate(70);
 
-      // 序列模式：完成第一個後啟用第二個
       if (state.difficulty === 4 && state.sequenceIndex === 0) {
         targetData.el.remove();
         state.sequenceIndex = 1;
@@ -969,7 +1214,6 @@
         return;
       }
 
-      // 記錄反應時間與完成數
       const rt = Math.min(30, (performance.now() - state.spawnTimestamp) / 1000);
       state.reactionTimes.push(rt);
       state.roundReactionTimes.push(rt);
@@ -980,7 +1224,6 @@
       updateStatsUI();
       clearBoard();
 
-      // 檢查是否達到回合休息上限
       if (state.roundLimit > 0 && state.roundHits >= state.roundLimit) {
         setTimeout(showRoundBreak, 450);
       } else {
@@ -989,14 +1232,12 @@
       }
     }
 
-    // 煙花慶祝粒子
-    function spawnCelebrationParticles(cx, cy) {
-      const t = themes[state.theme];
-      const colors = [t.fg, t.accent, '#FF5555', '#55FFFF'];
+    function spawnCelebrationParticles(cx, cy, mainColor) {
+      const colors = [mainColor || '#FFFF00', '#00FF00', '#FF5555', '#55FFFF'];
       for (let i = 0; i < 18; i++) {
         const p = document.createElement('div');
         p.className = 'particle';
-        const size = 12 + Math.random() * 14;
+        const size = 14 + Math.random() * 14;
         p.style.width = `${size}px`;
         p.style.height = `${size}px`;
         p.style.backgroundColor = colors[i % colors.length];
@@ -1005,7 +1246,7 @@
         gameArea.appendChild(p);
 
         const angle = (Math.PI * 2 * i) / 18;
-        const dist = 70 + Math.random() * 130;
+        const dist = 80 + Math.random() * 140;
         const tx = Math.cos(angle) * dist;
         const ty = Math.sin(angle) * dist;
 
@@ -1019,7 +1260,6 @@
       }
     }
 
-    // 空白處誤觸溫和視覺回饋（零挫敗設計，不扣分）
     gameArea.addEventListener('pointerdown', (e) => {
       if (state.isPaused) return;
       const ripple = document.createElement('div');
@@ -1061,7 +1301,6 @@
       spawnRound();
     }
 
-    // 繼續按鈕（支援老師長按解鎖保護）
     const continueBtn = document.getElementById('continue-btn');
     let continueHoldTimer = null;
 
@@ -1143,18 +1382,20 @@
       const settingKey = group.dataset.setting;
       group.querySelectorAll('.opt-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+          document.querySelectorAll(`.btn-group[data-setting="${settingKey}"] .opt-btn`).forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
 
           let val = btn.dataset.val;
-          if (['difficulty', 'size', 'roundLimit'].includes(settingKey)) {
+          if (['difficulty', 'sizeRatio', 'roundLimit'].includes(settingKey)) {
             val = Number(val);
           } else if (settingKey === 'teacherLock') {
             val = (val === 'true');
           }
           state[settingKey] = val;
 
-          if (settingKey === 'theme') applyTheme();
+          if (settingKey === 'bgMode' || settingKey === 'fgColor') {
+            applyColors();
+          }
           if (settingKey === 'roundLimit') {
             state.roundHits = 0;
             renderProgressDots();
@@ -1181,11 +1422,17 @@
       }
     });
 
+    window.addEventListener('resize', () => {
+      if (!state.isPaused) {
+        spawnRound();
+      }
+    });
+
     // === 啟動遊戲 ===
     document.getElementById('start-btn').addEventListener('click', () => {
       initAudio();
       document.getElementById('start-overlay').style.display = 'none';
-      applyTheme();
+      applyColors();
       renderProgressDots();
       state.isPaused = false;
       spawnRound();
