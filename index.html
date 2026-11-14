@@ -459,7 +459,7 @@
   <!-- 回合休息獎勵畫面 -->
   <div id="break-overlay">
     <div class="trophy-icon">🏆</div>
-    <div class="break-title">好棒！完成一回合啦！</div>
+    <div class="break-title">好叻喎！做得好！</div>
     <div class="break-stats" id="break-stats-text">
       本回合完成：10 個目標<br/>
       平均反應時間：1.5 秒
@@ -649,6 +649,7 @@
     const randomColorPool = ['#FFFF00', '#00FF00', '#FF2A2A', '#FF8800', '#FF1493', '#B829FF', '#00D4FF', '#00E5B0', '#FFFFFF'];
     let lastShape = '';
     let lastColor = '';
+    let lastPraiseIndex = -1;
 
     const gameArea = document.getElementById('game-area');
     const progressBarContainer = document.getElementById('progress-bar-container');
@@ -837,14 +838,38 @@
       });
     }
 
+    // === 廣東話語音鼓勵（「好叻喎！」、「做得好！」） ===
+    let cantoneseVoice = null;
+
+    function loadCantoneseVoice() {
+      if (!('speechSynthesis' in window)) return;
+      const voices = window.speechSynthesis.getVoices();
+      cantoneseVoice =
+        voices.find(v => v.lang === 'zh-HK' || v.lang === 'zh_HK') ||
+        voices.find(v => v.lang.toLowerCase().includes('hk') || v.name.toLowerCase().includes('cantonese') || v.name.includes('粵語') || v.name.includes('廣東話')) ||
+        null;
+    }
+
+    if ('speechSynthesis' in window) {
+      loadCantoneseVoice();
+      window.speechSynthesis.onvoiceschanged = loadCantoneseVoice;
+    }
+
     function speakPraise(customText) {
       if (!('speechSynthesis' in window)) return;
       window.speechSynthesis.cancel();
-      const phrases = ['好棒！', '捉到了！', '做得好！', '好叻呀！'];
-      const text = customText || phrases[Math.floor(Math.random() * phrases.length)];
+      const phrases = ['好叻喎！', '做得好！'];
+      let text = customText;
+      if (!text) {
+        lastPraiseIndex = (lastPraiseIndex + 1) % phrases.length;
+        text = phrases[lastPraiseIndex];
+      }
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'zh-HK';
-      utter.rate = 0.95;
+      if (cantoneseVoice) {
+        utter.voice = cantoneseVoice;
+      }
+      utter.rate = 0.92;
       utter.pitch = 1.15;
       window.speechSynthesis.speak(utter);
     }
@@ -886,38 +911,28 @@
                 fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
             </svg>`;
         case 'apple':
-          // 高對比幾何化蘋果（大圓潤果身 + 粗果柄 + 大葉片 + 高光弧線）
           return `
             <svg viewBox="0 0 124 124" width="100%" height="100%">
-              <!-- 果身 -->
               <path d="M62 38 C46 28, 22 36, 22 64 C22 92, 42 112, 56 112 C60 112, 62 109, 62 109 C62 109, 64 112, 68 112 C82 112, 102 92, 102 64 C102 36, 78 28, 62 38 Z"
                 fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
-              <!-- 粗果柄 -->
               <path d="M62 36 L62 16" stroke="${fgColor}" stroke-width="9" stroke-linecap="round" />
-              <!-- 大幾何葉片 -->
               <path d="M64 24 C74 10, 94 12, 96 24 C84 32, 70 30, 64 24 Z"
                 fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
-              <!-- 內部粗高光識別線 -->
               <path d="M36 56 C34 68, 38 80, 44 88" fill="none" stroke="${detailColor}" stroke-width="7" stroke-linecap="round" />
             </svg>`;
         case 'car':
-          // 高對比幾何化汽車（圓頂車廂 + 寬車身 + 雙鏤空車窗 + 雙大輪胎）
           return `
             <svg viewBox="0 0 124 124" width="100%" height="100%">
-              <!-- 車身與車頂一體幾何輪廓 -->
               <path d="M24 58 L34 32 C37 26, 42 24, 48 24 L76 24 C82 24, 87 26, 90 32 L100 58 L110 62 C114 64, 116 68, 116 74 L116 88 C116 92, 112 96, 108 96 L16 96 C12 96, 8 92, 8 88 L8 74 C8 68, 10 64, 14 62 Z"
                 fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" stroke-linejoin="round" />
-              <!-- 左右幾何車窗（高對比鏤空） -->
               <polygon points="42,33 58,33 58,54 34,54" fill="${detailColor}" />
               <polygon points="66,33 82,33 90,54 66,54" fill="${detailColor}" />
-              <!-- 左右大車輪（外圈 + 內軸） -->
               <circle cx="34" cy="96" r="16" fill="${detailColor}" />
               <circle cx="34" cy="96" r="8" fill="${fgColor}" />
               <circle cx="90" cy="96" r="16" fill="${detailColor}" />
               <circle cx="90" cy="96" r="8" fill="${fgColor}" />
             </svg>`;
         case 'flower':
-          // 高對比幾何化五瓣花朵（大圓花瓣 + 粗對比花蕊）
           return `
             <svg viewBox="0 0 124 124" width="100%" height="100%">
               <g fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}">
@@ -927,27 +942,19 @@
                 <circle cx="42" cy="90" r="22" />
                 <circle cx="30" cy="52" r="22" />
               </g>
-              <!-- 實心花心連接處 -->
               <circle cx="62" cy="62" r="26" fill="${fgColor}" />
-              <!-- 高對比花蕊 -->
               <circle cx="62" cy="62" r="16" fill="${detailColor}" />
             </svg>`;
         case 'butterfly':
-          // 高對比幾何化蝴蝶（四片大圓翅 + 粗身體觸角 + 翅膀對稱圓斑）
           return `
             <svg viewBox="0 0 124 124" width="100%" height="100%">
-              <!-- 上左右大翅膀 -->
               <circle cx="36" cy="44" r="26" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
               <circle cx="88" cy="44" r="26" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
-              <!-- 下左右小翅膀 -->
               <circle cx="40" cy="84" r="20" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
               <circle cx="84" cy="84" r="20" fill="${fgColor}" stroke="${outlineStroke}" stroke-width="${outlineWidth}" />
-              <!-- 翅膀對稱圓點標記 -->
               <circle cx="34" cy="42" r="8" fill="${detailColor}" />
               <circle cx="90" cy="42" r="8" fill="${detailColor}" />
-              <!-- 中央粗身體 -->
               <rect x="55" y="24" width="14" height="78" rx="7" fill="${detailColor}" />
-              <!-- 粗觸角 -->
               <path d="M58 26 L44 10 M66 26 L80 10" stroke="${fgColor}" stroke-width="7" stroke-linecap="round" />
             </svg>`;
         case 'sun':
@@ -1274,7 +1281,7 @@
     function showRoundBreak() {
       state.isPaused = true;
       playFanfareSound();
-      speakPraise('好棒！完成一回合啦，休息一下吧！');
+      speakPraise('好叻喎，做得好！完成一回合啦，休息一陣先！');
 
       const avgRoundRt = state.roundReactionTimes.length
         ? (state.roundReactionTimes.reduce((a, b) => a + b, 0) / state.roundReactionTimes.length).toFixed(2)
@@ -1431,6 +1438,7 @@
     // === 啟動遊戲 ===
     document.getElementById('start-btn').addEventListener('click', () => {
       initAudio();
+      loadCantoneseVoice();
       document.getElementById('start-overlay').style.display = 'none';
       applyColors();
       renderProgressDots();
