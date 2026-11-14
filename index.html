@@ -1,0 +1,1195 @@
+<!DOCTYPE html>
+<html lang="zh-HK">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>光影捕手 - 低視能訓練遊戲</title>
+  <style>
+    :root {
+      --bg-color: #000000;
+      --fg-color: #FFFF00;
+      --accent-color: #00FF00;
+      --distractor-color: rgba(255, 255, 255, 0.35);
+      --panel-bg: #161618;
+      --panel-text: #FFFFFF;
+      --border-color: #444444;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-touch-callout: none;
+      touch-action: manipulation;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      color: var(--fg-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang HK", "Microsoft JhengHei", sans-serif;
+    }
+
+    /* 主遊戲畫布 */
+    #game-area {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background-color: var(--bg-color);
+      transition: background-color 0.3s ease;
+    }
+
+    /* 頂部低干擾進度條 */
+    #progress-bar-container {
+      position: fixed;
+      top: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+      pointer-events: none;
+      opacity: 0.75;
+    }
+
+    .progress-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 3px solid var(--fg-color);
+      background-color: transparent;
+      transition: background-color 0.25s ease, transform 0.25s ease;
+    }
+
+    .progress-dot.filled {
+      background-color: var(--fg-color);
+      transform: scale(1.15);
+    }
+
+    /* 目標物件與擴大觸控區 */
+    .target-wrapper {
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 10;
+      transform: translate(-50%, -50%);
+      /* 擴大 25% 觸控容錯區 */
+      padding: 25px;
+    }
+
+    .target-graphic {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: breathe 2.2s infinite ease-in-out;
+      filter: drop-shadow(0 0 18px var(--fg-color));
+    }
+
+    .target-graphic.flash-mode {
+      animation: peripheralPulse 1.1s infinite ease-in-out;
+    }
+
+    .target-number {
+      position: absolute;
+      font-weight: 900;
+      color: var(--bg-color);
+      pointer-events: none;
+      text-shadow: none;
+    }
+
+    /* 序列掃視引導光環 */
+    .guide-ring {
+      position: absolute;
+      inset: 8px;
+      border-radius: 50%;
+      border: 6px dashed var(--accent-color);
+      animation: spinSlow 6s linear infinite;
+      pointer-events: none;
+    }
+
+    /* 干擾物件 */
+    .distractor-item {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.55;
+    }
+
+    /* 煙花粒子 */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    /* 溫和誤觸波紋 */
+    .miss-ripple {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 4px solid var(--fg-color);
+      opacity: 0.4;
+      transform: translate(-50%, -50%) scale(0.5);
+      animation: rippleFade 0.5s ease-out forwards;
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(0.95); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes peripheralPulse {
+      0%, 100% { opacity: 0.25; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    @keyframes spinSlow {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes rippleFade {
+      to {
+        transform: translate(-50%, -50%) scale(1.8);
+        opacity: 0;
+      }
+    }
+
+    /* 隱藏式教師按鈕（左上角長按 2 秒） */
+    #teacher-trigger {
+      position: fixed;
+      top: 14px;
+      left: 14px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: rgba(128, 128, 128, 0.18);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 50;
+      cursor: pointer;
+    }
+
+    #teacher-trigger svg.gear-icon {
+      width: 28px;
+      height: 28px;
+      fill: rgba(255, 255, 255, 0.35);
+    }
+
+    #hold-ring {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 56px;
+      height: 56px;
+      transform: rotate(-90deg);
+    }
+
+    #hold-ring circle {
+      fill: none;
+      stroke: #FFFF00;
+      stroke-width: 5;
+      stroke-dasharray: 157;
+      stroke-dashoffset: 157;
+    }
+
+    /* 啟動遮罩畫面 */
+    #start-overlay, #break-overlay {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.94);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+      text-align: center;
+    }
+
+    .big-start-btn {
+      background-color: #FFFF00;
+      color: #000000;
+      border: none;
+      border-radius: 28px;
+      padding: 32px 64px;
+      font-size: 2.4rem;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 0 0 35px rgba(255, 255, 0, 0.6);
+      margin-top: 24px;
+    }
+
+    .big-start-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* 回合休息獎勵畫面 */
+    #break-overlay {
+      display: none;
+    }
+
+    .trophy-icon {
+      font-size: 7rem;
+      margin-bottom: 10px;
+      animation: breathe 1.8s infinite ease-in-out;
+    }
+
+    .break-title {
+      font-size: 2.6rem;
+      font-weight: 900;
+      color: #FFFF00;
+      margin: 8px 0;
+    }
+
+    .break-stats {
+      background: #1C1C1E;
+      border: 2px solid #444;
+      border-radius: 16px;
+      padding: 18px 32px;
+      margin: 18px 0;
+      color: #FFFFFF;
+      font-size: 1.25rem;
+      line-height: 1.8;
+    }
+
+    /* 教師設定面板 */
+    #teacher-panel {
+      position: fixed;
+      inset: 0;
+      background-color: rgba(0, 0, 0, 0.85);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+      padding: 16px;
+    }
+
+    .panel-card {
+      background-color: var(--panel-bg);
+      color: var(--panel-text);
+      width: 100%;
+      max-width: 760px;
+      max-height: 92vh;
+      overflow-y: auto;
+      border-radius: 20px;
+      border: 2px solid var(--border-color);
+      padding: 24px;
+    }
+
+    .panel-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 14px;
+      margin-bottom: 18px;
+    }
+
+    .panel-header h2 {
+      margin: 0;
+      font-size: 1.45rem;
+      color: #FFFF00;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
+    .stat-box {
+      background: #252529;
+      padding: 12px;
+      border-radius: 12px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #00FF00;
+    }
+
+    .stat-label {
+      font-size: 0.85rem;
+      color: #CCCCCC;
+      margin-top: 4px;
+    }
+
+    .setting-group {
+      margin-bottom: 18px;
+    }
+
+    .setting-group label {
+      display: block;
+      font-weight: 700;
+      margin-bottom: 8px;
+      font-size: 1.05rem;
+      color: #EFEFEF;
+    }
+
+    .btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .opt-btn {
+      background: #2C2C30;
+      color: #FFFFFF;
+      border: 2px solid #48484D;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .opt-btn.active {
+      background: #FFFF00;
+      color: #000000;
+      border-color: #FFFF00;
+    }
+
+    .panel-footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 22px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .action-btn {
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+    }
+
+    .btn-reset {
+      background: #3A3A3C;
+      color: #FF6B6B;
+    }
+
+    .btn-close {
+      background: #00FF00;
+      color: #000000;
+      flex: 1;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 主遊戲畫面 -->
+  <div id="game-area">
+    <div id="progress-bar-container"></div>
+  </div>
+
+  <!-- 隱藏式教師按鈕（左上角長按 2 秒） -->
+  <div id="teacher-trigger" title="長按 2 秒開啟教師設定">
+    <svg id="hold-ring" viewBox="0 0 56 56">
+      <circle id="hold-circle" cx="28" cy="28" r="25"></circle>
+    </svg>
+    <svg class="gear-icon" viewBox="0 0 24 24">
+      <path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 C2.62,9.08,2.66,9.34,2.86,9.48l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12s0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z"/>
+    </svg>
+  </div>
+
+  <!-- 開始畫面 -->
+  <div id="start-overlay">
+    <div style="font-size: 5rem;">☀️</div>
+    <h1 style="font-size: 2.6rem; color: #FFFF00; margin: 12px 0;">光影捕手</h1>
+    <p style="font-size: 1.2rem; color: #CCCCCC; max-width: 480px;">
+      低視能視覺注視、追視與搜尋訓練<br/>
+      <span style="font-size: 0.95rem; color: #888;">（進入後長按左上角齒輪 2 秒可開啟教師設定）</span>
+    </p>
+    <button class="big-start-btn" id="start-btn">開始訓練</button>
+  </div>
+
+  <!-- 回合休息獎勵畫面 -->
+  <div id="break-overlay">
+    <div class="trophy-icon">🏆</div>
+    <div class="break-title">好棒！完成一回合啦！</div>
+    <div class="break-stats" id="break-stats-text">
+      本回合完成：10 個目標<br/>
+      平均反應時間：1.5 秒
+    </div>
+    <button class="big-start-btn" id="continue-btn">繼續下一回合</button>
+    <div id="teacher-unlock-hint" style="display:none; color:#AAA; margin-top:14px; font-size:1rem;">
+      已開啟防誤觸保護：請老師長按按鈕 1.5 秒繼續
+    </div>
+  </div>
+
+  <!-- 教師設定面板 -->
+  <div id="teacher-panel">
+    <div class="panel-card">
+      <div class="panel-header">
+        <h2>👩‍🏫 教師訓練參數與記錄</h2>
+        <span style="font-size: 0.9rem; color: #AAA;">設定即時生效</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-label">本節累計完成</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-avg-rt">--</div>
+          <div class="stat-label">平均反應時間 (秒)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="stat-round">0 / 10</div>
+          <div class="stat-label">本回合進度</div>
+        </div>
+      </div>
+
+      <!-- 1. 訓練難度模式 -->
+      <div class="setting-group">
+        <label>1. 訓練難度模式</label>
+        <div class="btn-group" data-setting="difficulty">
+          <button class="opt-btn active" data-val="1">難度1：基礎注視定位</button>
+          <button class="opt-btn" data-val="2">難度2：動態視覺追視</button>
+          <button class="opt-btn" data-val="3">難度3：干擾排除搜尋</button>
+          <button class="opt-btn" data-val="4">難度4：序列雙重掃視</button>
+          <button class="opt-btn" data-val="5">難度5：周邊視野閃現</button>
+        </div>
+      </div>
+
+      <!-- 2. 目標尺寸 -->
+      <div class="setting-group">
+        <label>2. 目標圖案尺寸</label>
+        <div class="btn-group" data-setting="size">
+          <button class="opt-btn" data-val="220">超大 (220px)</button>
+          <button class="opt-btn active" data-val="165">大 (165px)</button>
+          <button class="opt-btn" data-val="120">中 (120px)</button>
+          <button class="opt-btn" data-val="85">小 (85px)</button>
+        </div>
+      </div>
+
+      <!-- 3. 高對比配色主題 -->
+      <div class="setting-group">
+        <label>3. 高對比配色主題（適應畏光或視網膜病變）</label>
+        <div class="btn-group" data-setting="theme">
+          <button class="opt-btn active" data-val="black-yellow">黑底鮮黃（高對比首選）</button>
+          <button class="opt-btn" data-val="black-green">黑底螢光綠</button>
+          <button class="opt-btn" data-val="black-white">黑底純白</button>
+          <button class="opt-btn" data-val="white-black">白底純黑（適合特定畏光）</button>
+          <button class="opt-btn" data-val="blue-yellow">深藍底鮮黃</button>
+        </div>
+      </div>
+
+      <!-- 4. 目標圖案選擇 -->
+      <div class="setting-group">
+        <label>4. 目標圖案樣式</label>
+        <div class="btn-group" data-setting="shape">
+          <button class="opt-btn active" data-val="random">隨機輪換（推薦）</button>
+          <button class="opt-btn" data-val="sun">發光太陽</button>
+          <button class="opt-btn" data-val="smiley">笑臉太陽</button>
+          <button class="opt-btn" data-val="star">閃亮星星</button>
+          <button class="opt-btn" data-val="heart">大愛心</button>
+        </div>
+      </div>
+
+      <!-- 5. 回合目標數量（自動暫停休息） -->
+      <div class="setting-group">
+        <label>5. 每回合目標數量（完成後暫停獎勵）</label>
+        <div class="btn-group" data-setting="roundLimit">
+          <button class="opt-btn" data-val="5">每 5 個暫停</button>
+          <button class="opt-btn active" data-val="10">每 10 個暫停</button>
+          <button class="opt-btn" data-val="15">每 15 個暫停</button>
+          <button class="opt-btn" data-val="0">不限次數（連續模式）</button>
+        </div>
+      </div>
+
+      <!-- 6. 視野區域偏重（針對偏盲或視野缺損） -->
+      <div class="setting-group">
+        <label>6. 視野區域偏重（針對偏盲或視野缺損訓練）</label>
+        <div class="btn-group" data-setting="fieldBias">
+          <button class="opt-btn active" data-val="all">全螢幕平均</button>
+          <button class="opt-btn" data-val="left">左側視野優先</button>
+          <button class="opt-btn" data-val="right">右側視野優先</button>
+          <button class="opt-btn" data-val="top">上半部視野優先</button>
+          <button class="opt-btn" data-val="bottom">下半部視野優先</button>
+        </div>
+      </div>
+
+      <!-- 7. 休息畫面保護與音效 -->
+      <div class="setting-group">
+        <label>7. 休息畫面解鎖保護</label>
+        <div class="btn-group" data-setting="teacherLock">
+          <button class="opt-btn active" data-val="false">學生可直接點擊繼續</button>
+          <button class="opt-btn" data-val="true">需老師長按 1.5 秒解鎖</button>
+        </div>
+      </div>
+
+      <div class="panel-footer">
+        <button class="action-btn btn-reset" id="reset-stats-btn">重設統計數據</button>
+        <button class="action-btn btn-close" id="close-panel-btn">儲存並返回訓練</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // === 遊戲狀態與預設參數 ===
+    const state = {
+      difficulty: 1,         // 1~5
+      size: 165,             // px
+      theme: 'black-yellow',
+      shape: 'random',
+      roundLimit: 10,        // 0 = unlimited
+      fieldBias: 'all',
+      teacherLock: false,
+
+      // 統計數據
+      totalHits: 0,
+      roundHits: 0,
+      reactionTimes: [],
+      roundReactionTimes: [],
+      spawnTimestamp: 0,
+
+      // 執行中物件
+      activeTargets: [],
+      sequenceIndex: 0,
+      animFrameId: null,
+      isPaused: true
+    };
+
+    const themes = {
+      'black-yellow': { bg: '#000000', fg: '#FFFF00', accent: '#00FF00', distractor: 'rgba(255,255,255,0.35)' },
+      'black-green':  { bg: '#000000', fg: '#00FF00', accent: '#FFFF00', distractor: 'rgba(255,255,255,0.35)' },
+      'black-white':  { bg: '#000000', fg: '#FFFFFF', accent: '#FFFF00', distractor: 'rgba(255,255,255,0.3)' },
+      'white-black':  { bg: '#FFFFFF', fg: '#000000', accent: '#D90000', distractor: 'rgba(0,0,0,0.28)' },
+      'blue-yellow':  { bg: '#001845', fg: '#FFFF00', accent: '#00FF88', distractor: 'rgba(255,255,255,0.35)' }
+    };
+
+    const availableShapes = ['sun', 'smiley', 'star', 'heart'];
+    let lastShape = '';
+
+    const gameArea = document.getElementById('game-area');
+    const progressBarContainer = document.getElementById('progress-bar-container');
+
+    // === Web Audio API 音效合成器（無需外部音檔） ===
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 目標出現時的柔和提示音
+    function playSpawnSound() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(523.25, now); // C5
+      osc.frequency.exponentialRampToValueAtTime(659.25, now + 0.15); // E5
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    }
+
+    // 成功擊中時的歡快和弦音效
+    function playSuccessSound() {
+      if (!audioCtx) return;
+      const notes = [523.25, 659.25, 783.99, 1046.50]; // C5 E5 G5 C6
+      notes.forEach((freq, idx) => {
+        const now = audioCtx.currentTime + idx * 0.06;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      });
+    }
+
+    // 回合完成勝利號角
+    function playFanfareSound() {
+      if (!audioCtx) return;
+      const melody = [
+        { f: 523.25, t: 0, d: 0.15 },
+        { f: 659.25, t: 0.15, d: 0.15 },
+        { f: 783.99, t: 0.30, d: 0.15 },
+        { f: 1046.50, t: 0.48, d: 0.5 }
+      ];
+      melody.forEach(n => {
+        const now = audioCtx.currentTime + n.t;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(n.f, now);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + n.d);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start(now);
+        osc.stop(now + n.d);
+      });
+    }
+
+    // 語音鼓勵
+    function speakPraise(customText) {
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const phrases = ['好棒！', '捉到了！', '做得好！', '好叻呀！'];
+      const text = customText || phrases[Math.floor(Math.random() * phrases.length)];
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = 'zh-HK';
+      utter.rate = 0.95;
+      utter.pitch = 1.15;
+      window.speechSynthesis.speak(utter);
+    }
+
+    // === 繪製高對比 SVG 圖案 ===
+    function getShapeSVG(shapeType, fgColor, bgColor) {
+      let chosen = shapeType;
+      if (chosen === 'random') {
+        const pool = availableShapes.filter(s => s !== lastShape);
+        chosen = pool[Math.floor(Math.random() * pool.length)];
+      }
+      lastShape = chosen;
+
+      switch (chosen) {
+        case 'smiley':
+          return `
+            <svg viewBox="0 0 120 120" width="100%" height="100%">
+              <circle cx="60" cy="60" r="52" fill="${fgColor}" />
+              <circle cx="42" cy="46" r="7" fill="${bgColor}" />
+              <circle cx="78" cy="46" r="7" fill="${bgColor}" />
+              <path d="M 36 68 Q 60 94 84 68" fill="none" stroke="${bgColor}" stroke-width="9" stroke-linecap="round" />
+            </svg>`;
+        case 'star':
+          return `
+            <svg viewBox="0 0 120 120" width="100%" height="100%">
+              <polygon points="60,8 75,42 112,46 84,71 92,108 60,89 28,108 36,71 8,46 45,42"
+                fill="${fgColor}" stroke="${fgColor}" stroke-width="4" stroke-linejoin="round" />
+            </svg>`;
+        case 'heart':
+          return `
+            <svg viewBox="0 0 120 120" width="100%" height="100%">
+              <path d="M60 104 C20 76, 6 48, 24 26 C38 10, 56 20, 60 32 C64 20, 82 10, 96 26 C114 48, 100 76, 60 104 Z"
+                fill="${fgColor}" />
+            </svg>`;
+        case 'sun':
+        default:
+          return `
+            <svg viewBox="0 0 120 120" width="100%" height="100%">
+              <circle cx="60" cy="60" r="36" fill="${fgColor}" />
+              <g stroke="${fgColor}" stroke-width="8" stroke-linecap="round">
+                <line x1="60" y1="6" x2="60" y2="18" />
+                <line x1="60" y1="102" x2="60" y2="114" />
+                <line x1="6" y1="60" x2="18" y2="60" />
+                <line x1="102" y1="60" x2="114" y2="60" />
+                <line x1="22" y1="22" x2="30" y2="30" />
+                <line x1="90" y1="90" x2="98" y2="98" />
+                <line x1="98" y1="22" x2="90" y2="30" />
+                <line x1="30" y1="90" x2="22" y2="98" />
+              </g>
+            </svg>`;
+      }
+    }
+
+    function getDistractorSVG(type, color) {
+      if (type === 0) {
+        return `<svg viewBox="0 0 100 100" width="100%" height="100%">
+          <rect x="14" y="14" width="72" height="72" fill="none" stroke="${color}" stroke-width="10" />
+        </svg>`;
+      } else {
+        return `<svg viewBox="0 0 100 100" width="100%" height="100%">
+          <polygon points="50,12 90,86 10,86" fill="none" stroke="${color}" stroke-width="10" stroke-linejoin="round" />
+        </svg>`;
+      }
+    }
+
+    // === 套用主題色彩 ===
+    function applyTheme() {
+      const t = themes[state.theme];
+      document.documentElement.style.setProperty('--bg-color', t.bg);
+      document.documentElement.style.setProperty('--fg-color', t.fg);
+      document.documentElement.style.setProperty('--accent-color', t.accent);
+      document.documentElement.style.setProperty('--distractor-color', t.distractor);
+    }
+
+    // === 更新頂部回合進度點 ===
+    function renderProgressDots() {
+      progressBarContainer.innerHTML = '';
+      if (state.roundLimit <= 0) return;
+      for (let i = 0; i < state.roundLimit; i++) {
+        const dot = document.createElement('div');
+        dot.className = 'progress-dot' + (i < state.roundHits ? ' filled' : '');
+        progressBarContainer.appendChild(dot);
+      }
+    }
+
+    // === 計算符合視野偏重與安全邊界的座標 ===
+    function getRandomPosition(existingPositions = [], forceEdge = false) {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const margin = state.size * 0.75 + 24;
+
+      let minX = margin, maxX = w - margin;
+      let minY = margin + 25, maxY = h - margin;
+
+      if (state.fieldBias === 'left') maxX = Math.max(minX + 40, w * 0.48);
+      if (state.fieldBias === 'right') minX = Math.min(maxX - 40, w * 0.52);
+      if (state.fieldBias === 'top') maxY = Math.max(minY + 40, h * 0.48);
+      if (state.fieldBias === 'bottom') minY = Math.min(maxY - 40, h * 0.52);
+
+      let bestX = (minX + maxX) / 2;
+      let bestY = (minY + maxY) / 2;
+
+      for (let attempt = 0; attempt < 25; attempt++) {
+        let x = minX + Math.random() * Math.max(10, maxX - minX);
+        let y = minY + Math.random() * Math.max(10, maxY - minY);
+
+        // 難度 5：周邊視野閃現，推向四邊外圍
+        if (forceEdge) {
+          const edge = Math.floor(Math.random() * 4);
+          if (edge === 0) x = minX + Math.random() * (w * 0.15);
+          else if (edge === 1) x = maxX - Math.random() * (w * 0.15);
+          else if (edge === 2) y = minY + Math.random() * (h * 0.15);
+          else y = maxY - Math.random() * (h * 0.15);
+        }
+
+        const tooClose = existingPositions.some(p => Math.hypot(p.x - x, p.y - y) < state.size * 1.35);
+        if (!tooClose) {
+          bestX = x;
+          bestY = y;
+          break;
+        }
+      }
+      return { x: bestX, y: bestY };
+    }
+
+    // === 清除畫面上現有物件 ===
+    function clearBoard() {
+      if (state.animFrameId) {
+        cancelAnimationFrame(state.animFrameId);
+        state.animFrameId = null;
+      }
+      document.querySelectorAll('.target-wrapper, .distractor-item').forEach(el => el.remove());
+      state.activeTargets = [];
+      state.sequenceIndex = 0;
+    }
+
+    // === 生成新一題目標 ===
+    function spawnRound() {
+      if (state.isPaused) return;
+      clearBoard();
+
+      const t = themes[state.theme];
+      const occupied = [];
+      state.spawnTimestamp = performance.now();
+      playSpawnSound();
+
+      // 難度 4：序列雙重掃視（由左至右出現 1 號與 2 號目標）
+      if (state.difficulty === 4) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        const yBase = h * (0.35 + Math.random() * 0.3);
+        const positions = [
+          { x: Math.max(state.size, w * 0.25), y: yBase },
+          { x: Math.min(w - state.size, w * 0.75), y: yBase + (Math.random() * 120 - 60) }
+        ];
+
+        positions.forEach((pos, idx) => {
+          createTargetElement(pos.x, pos.y, idx, true);
+        });
+        return;
+      }
+
+      // 難度 3：加入 2 個低顯著性幾何干擾物
+      if (state.difficulty === 3) {
+        const targetPos = getRandomPosition(occupied, false);
+        occupied.push(targetPos);
+        createTargetElement(targetPos.x, targetPos.y, 0, false);
+
+        for (let i = 0; i < 2; i++) {
+          const dPos = getRandomPosition(occupied, false);
+          occupied.push(dPos);
+          const dEl = document.createElement('div');
+          dEl.className = 'distractor-item';
+          dEl.style.width = `${state.size * 0.85}px`;
+          dEl.style.height = `${state.size * 0.85}px`;
+          dEl.style.left = `${dPos.x}px`;
+          dEl.style.top = `${dPos.y}px`;
+          dEl.innerHTML = getDistractorSVG(i % 2, t.distractor);
+          gameArea.appendChild(dEl);
+        }
+        return;
+      }
+
+      // 難度 1, 2, 5
+      const isEdge = (state.difficulty === 5);
+      const pos = getRandomPosition(occupied, isEdge);
+      const targetObj = createTargetElement(pos.x, pos.y, 0, false, isEdge);
+
+      // 難度 2：動態視覺追視（緩慢平滑移動）
+      if (state.difficulty === 2) {
+        startTrackingMotion(targetObj);
+      }
+    }
+
+    // 建立單個可互動目標 DOM
+    function createTargetElement(x, y, seqIdx = 0, showSequenceUI = false, flashMode = false) {
+      const t = themes[state.theme];
+      const wrapper = document.createElement('div');
+      wrapper.className = 'target-wrapper';
+      const totalSize = state.size + 50; // 包含擴大觸控區
+      wrapper.style.width = `${totalSize}px`;
+      wrapper.style.height = `${totalSize}px`;
+      wrapper.style.left = `${x}px`;
+      wrapper.style.top = `${y}px`;
+
+      const graphic = document.createElement('div');
+      graphic.className = 'target-graphic' + (flashMode ? ' flash-mode' : '');
+      graphic.innerHTML = getShapeSVG(state.shape, t.fg, t.bg);
+      wrapper.appendChild(graphic);
+
+      if (showSequenceUI) {
+        const num = document.createElement('div');
+        num.className = 'target-number';
+        num.style.fontSize = `${state.size * 0.36}px`;
+        num.textContent = seqIdx + 1;
+        wrapper.appendChild(num);
+
+        if (seqIdx === 0) {
+          const ring = document.createElement('div');
+          ring.className = 'guide-ring';
+          wrapper.appendChild(ring);
+        } else {
+          wrapper.style.opacity = '0.45';
+        }
+      }
+
+      const targetData = { el: wrapper, x, y, seqIdx, hit: false };
+      state.activeTargets.push(targetData);
+
+      const handleHit = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        onTargetHit(targetData);
+      };
+
+      wrapper.addEventListener('pointerdown', handleHit);
+      // 難度 2 追視模式亦支援手指滑過觸發
+      if (state.difficulty === 2) {
+        wrapper.addEventListener('pointerenter', (e) => {
+          if (e.buttons > 0) handleHit(e);
+        });
+      }
+
+      gameArea.appendChild(wrapper);
+      return targetData;
+    }
+
+    // 難度 2 追視移動動畫
+    function startTrackingMotion(targetObj) {
+      const margin = state.size * 0.8 + 20;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      let vx = (Math.random() > 0.5 ? 1 : -1) * 1.65;
+      let vy = (Math.random() > 0.5 ? 1 : -1) * 1.15;
+
+      function step() {
+        if (state.isPaused || targetObj.hit) return;
+        targetObj.x += vx;
+        targetObj.y += vy;
+
+        if (targetObj.x < margin || targetObj.x > w - margin) vx *= -1;
+        if (targetObj.y < margin + 25 || targetObj.y > h - margin) vy *= -1;
+
+        targetObj.el.style.left = `${targetObj.x}px`;
+        targetObj.el.style.top = `${targetObj.y}px`;
+        state.animFrameId = requestAnimationFrame(step);
+      }
+      state.animFrameId = requestAnimationFrame(step);
+    }
+
+    // === 擊中目標處理 ===
+    function onTargetHit(targetData) {
+      if (targetData.hit || state.isPaused) return;
+
+      // 若為序列模式，必須按順序點擊
+      if (state.difficulty === 4 && targetData.seqIdx !== state.sequenceIndex) {
+        return;
+      }
+
+      targetData.hit = true;
+      spawnCelebrationParticles(targetData.x, targetData.y);
+      playSuccessSound();
+      if (navigator.vibrate) navigator.vibrate(70);
+
+      // 序列模式：完成第一個後啟用第二個
+      if (state.difficulty === 4 && state.sequenceIndex === 0) {
+        targetData.el.remove();
+        state.sequenceIndex = 1;
+        const nextTarget = state.activeTargets[1];
+        if (nextTarget) {
+          nextTarget.el.style.opacity = '1';
+          const ring = document.createElement('div');
+          ring.className = 'guide-ring';
+          nextTarget.el.appendChild(ring);
+        }
+        return;
+      }
+
+      // 記錄反應時間與完成數
+      const rt = Math.min(30, (performance.now() - state.spawnTimestamp) / 1000);
+      state.reactionTimes.push(rt);
+      state.roundReactionTimes.push(rt);
+      state.totalHits += 1;
+      state.roundHits += 1;
+
+      renderProgressDots();
+      updateStatsUI();
+      clearBoard();
+
+      // 檢查是否達到回合休息上限
+      if (state.roundLimit > 0 && state.roundHits >= state.roundLimit) {
+        setTimeout(showRoundBreak, 450);
+      } else {
+        speakPraise();
+        setTimeout(spawnRound, 650);
+      }
+    }
+
+    // 煙花慶祝粒子
+    function spawnCelebrationParticles(cx, cy) {
+      const t = themes[state.theme];
+      const colors = [t.fg, t.accent, '#FF5555', '#55FFFF'];
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const size = 12 + Math.random() * 14;
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.backgroundColor = colors[i % colors.length];
+        p.style.left = `${cx}px`;
+        p.style.top = `${cy}px`;
+        gameArea.appendChild(p);
+
+        const angle = (Math.PI * 2 * i) / 18;
+        const dist = 70 + Math.random() * 130;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist;
+
+        p.animate([
+          { transform: 'translate(-50%, -50%) scale(1)', opacity: 1 },
+          { transform: `translate(calc(-50% + ${tx}px), calc(-50% + ${ty}px)) scale(0.2)`, opacity: 0 }
+        ], {
+          duration: 580,
+          easing: 'cubic-bezier(0.16, 1, 0.3, 1)'
+        }).onfinish = () => p.remove();
+      }
+    }
+
+    // 空白處誤觸溫和視覺回饋（零挫敗設計，不扣分）
+    gameArea.addEventListener('pointerdown', (e) => {
+      if (state.isPaused) return;
+      const ripple = document.createElement('div');
+      ripple.className = 'miss-ripple';
+      ripple.style.left = `${e.clientX}px`;
+      ripple.style.top = `${e.clientY}px`;
+      gameArea.appendChild(ripple);
+      setTimeout(() => ripple.remove(), 520);
+    });
+
+    // === 回合結束休息獎勵畫面 ===
+    function showRoundBreak() {
+      state.isPaused = true;
+      playFanfareSound();
+      speakPraise('好棒！完成一回合啦，休息一下吧！');
+
+      const avgRoundRt = state.roundReactionTimes.length
+        ? (state.roundReactionTimes.reduce((a, b) => a + b, 0) / state.roundReactionTimes.length).toFixed(2)
+        : '--';
+
+      document.getElementById('break-stats-text').innerHTML = `
+        本回合完成：<strong>${state.roundHits}</strong> 個目標<br/>
+        本回合平均反應時間：<strong>${avgRoundRt}</strong> 秒<br/>
+        本節累計完成：<strong>${state.totalHits}</strong> 個目標
+      `;
+
+      document.getElementById('teacher-unlock-hint').style.display =
+        state.teacherLock ? 'block' : 'none';
+
+      document.getElementById('break-overlay').style.display = 'flex';
+    }
+
+    function startNextRound() {
+      state.roundHits = 0;
+      state.roundReactionTimes = [];
+      renderProgressDots();
+      document.getElementById('break-overlay').style.display = 'none';
+      state.isPaused = false;
+      spawnRound();
+    }
+
+    // 繼續按鈕（支援老師長按解鎖保護）
+    const continueBtn = document.getElementById('continue-btn');
+    let continueHoldTimer = null;
+
+    continueBtn.addEventListener('pointerdown', () => {
+      initAudio();
+      if (!state.teacherLock) {
+        startNextRound();
+      } else {
+        continueBtn.style.opacity = '0.7';
+        continueHoldTimer = setTimeout(() => {
+          continueBtn.style.opacity = '1';
+          startNextRound();
+        }, 1500);
+      }
+    });
+
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
+      continueBtn.addEventListener(evt, () => {
+        clearTimeout(continueHoldTimer);
+        continueBtn.style.opacity = '1';
+      });
+    });
+
+    // === 隱藏式教師按鈕長按 2 秒邏輯 ===
+    const trigger = document.getElementById('teacher-trigger');
+    const holdCircle = document.getElementById('hold-circle');
+    let holdStart = null;
+    let holdRaf = null;
+
+    function updateHoldProgress(timestamp) {
+      if (!holdStart) return;
+      const elapsed = timestamp - holdStart;
+      const progress = Math.min(1, elapsed / 2000);
+      holdCircle.style.strokeDashoffset = 157 * (1 - progress);
+
+      if (progress >= 1) {
+        holdStart = null;
+        holdCircle.style.strokeDashoffset = 157;
+        openTeacherPanel();
+      } else {
+        holdRaf = requestAnimationFrame(updateHoldProgress);
+      }
+    }
+
+    trigger.addEventListener('pointerdown', (e) => {
+      e.stopPropagation();
+      holdStart = performance.now();
+      holdRaf = requestAnimationFrame(updateHoldProgress);
+    });
+
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(evt => {
+      trigger.addEventListener(evt, () => {
+        holdStart = null;
+        cancelAnimationFrame(holdRaf);
+        holdCircle.style.strokeDashoffset = 157;
+      });
+    });
+
+    // === 教師設定面板互動 ===
+    const teacherPanel = document.getElementById('teacher-panel');
+
+    function openTeacherPanel() {
+      state.isPaused = true;
+      updateStatsUI();
+      teacherPanel.style.display = 'flex';
+    }
+
+    function updateStatsUI() {
+      document.getElementById('stat-total').textContent = state.totalHits;
+      const avg = state.reactionTimes.length
+        ? (state.reactionTimes.reduce((a, b) => a + b, 0) / state.reactionTimes.length).toFixed(2)
+        : '--';
+      document.getElementById('stat-avg-rt').textContent = avg;
+      document.getElementById('stat-round').textContent =
+        state.roundLimit > 0 ? `${state.roundHits} / ${state.roundLimit}` : `${state.roundHits} (不限)`;
+    }
+
+    document.querySelectorAll('.btn-group').forEach(group => {
+      const settingKey = group.dataset.setting;
+      group.querySelectorAll('.opt-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          group.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          let val = btn.dataset.val;
+          if (['difficulty', 'size', 'roundLimit'].includes(settingKey)) {
+            val = Number(val);
+          } else if (settingKey === 'teacherLock') {
+            val = (val === 'true');
+          }
+          state[settingKey] = val;
+
+          if (settingKey === 'theme') applyTheme();
+          if (settingKey === 'roundLimit') {
+            state.roundHits = 0;
+            renderProgressDots();
+          }
+          updateStatsUI();
+        });
+      });
+    });
+
+    document.getElementById('reset-stats-btn').addEventListener('click', () => {
+      state.totalHits = 0;
+      state.roundHits = 0;
+      state.reactionTimes = [];
+      state.roundReactionTimes = [];
+      renderProgressDots();
+      updateStatsUI();
+    });
+
+    document.getElementById('close-panel-btn').addEventListener('click', () => {
+      teacherPanel.style.display = 'none';
+      if (document.getElementById('break-overlay').style.display !== 'flex') {
+        state.isPaused = false;
+        spawnRound();
+      }
+    });
+
+    // === 啟動遊戲 ===
+    document.getElementById('start-btn').addEventListener('click', () => {
+      initAudio();
+      document.getElementById('start-overlay').style.display = 'none';
+      applyTheme();
+      renderProgressDots();
+      state.isPaused = false;
+      spawnRound();
+    });
+  </script>
+</body>
+</html>
