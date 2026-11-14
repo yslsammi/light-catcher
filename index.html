@@ -569,10 +569,10 @@
         <label>5. 目標圖案樣式（幾何及生活化高對比圖案）</label>
         <div class="btn-group" data-setting="shape">
           <button class="opt-btn active" data-val="random">隨機輪換（全部 8 款）</button>
-          <button class="opt-btn" data-val="sun">☀️ 發光太陽</button>
-          <button class="opt-btn" data-val="smiley">😊 笑臉太陽</button>
-          <button class="opt-btn" data-val="star">⭐ 閃亮星星</button>
-          <button class="opt-btn" data-val="heart">❤️ 大愛心</button>
+          <button class="opt-btn" data-val="sun">☀️ 太陽</button>
+          <button class="opt-btn" data-val="smiley">😊 笑臉</button>
+          <button class="opt-btn" data-val="star">⭐ 星星</button>
+          <button class="opt-btn" data-val="heart">❤️ 愛心</button>
           <button class="opt-btn" data-val="apple">🍎 蘋果</button>
           <button class="opt-btn" data-val="car">🚗 汽車</button>
           <button class="opt-btn" data-val="flower">🌸 花朵</button>
@@ -612,6 +612,24 @@
         </div>
       </div>
 
+      <!-- 9. 點擊後語音命名訓練模式 -->
+      <div class="setting-group">
+        <label>9. 點擊後廣東話語音稱讚方式</label>
+        <div class="btn-group" data-setting="sayObjectName">
+          <button class="opt-btn active" data-val="true">稱讚 ＋ 讀出圖案名稱（例如：好叻喎！係蘋果呀！）</button>
+          <button class="opt-btn" data-val="false">只讀稱讚（好叻喎！ / 做得好！）</button>
+        </div>
+      </div>
+
+      <!-- 10. 圖案出現時語音提示 -->
+      <div class="setting-group">
+        <label>10. 圖案出現時廣東話語音提示</label>
+        <div class="btn-group" data-setting="promptOnSpawn">
+          <button class="opt-btn active" data-val="true">開啟（出現時問：搵下蘋果喺邊度呀？）</button>
+          <button class="opt-btn" data-val="false">關閉（只播提示音）</button>
+        </div>
+      </div>
+
       <div class="panel-footer">
         <button class="action-btn btn-reset" id="reset-stats-btn">重設統計數據</button>
         <button class="action-btn btn-close" id="close-panel-btn">儲存並返回訓練</button>
@@ -630,6 +648,8 @@
       roundLimit: 10,        // 0 = unlimited
       fieldBias: 'all',
       teacherLock: false,
+      sayObjectName: true,   // 點擊後讀出圖案名稱
+      promptOnSpawn: true,   // 出現時語音提示找物件
 
       // 統計數據
       totalHits: 0,
@@ -646,6 +666,17 @@
     };
 
     const availableShapes = ['sun', 'smiley', 'star', 'heart', 'apple', 'car', 'flower', 'butterfly'];
+    const shapeCantoneseNames = {
+      sun: '太陽',
+      smiley: '笑臉',
+      star: '星星',
+      heart: '愛心',
+      apple: '蘋果',
+      car: '車車',
+      flower: '花朵',
+      butterfly: '蝴蝶'
+    };
+
     const randomColorPool = ['#FFFF00', '#00FF00', '#FF2A2A', '#FF8800', '#FF1493', '#B829FF', '#00D4FF', '#00E5B0', '#FFFFFF'];
     let lastShape = '';
     let lastColor = '';
@@ -669,12 +700,24 @@
       return chosen;
     }
 
+    // 決定本題具體圖案名稱
+    function resolveShapeKey(shapeType) {
+      if (shapeType !== 'random') {
+        lastShape = shapeType;
+        return shapeType;
+      }
+      const pool = availableShapes.filter(s => s !== lastShape);
+      const chosen = pool[Math.floor(Math.random() * pool.length)];
+      lastShape = chosen;
+      return chosen;
+    }
+
     // 判斷背景是否為淺色系
     function isLightBgMode(mode) {
       return ['solid-white', 'solid-cream', 'multi-rainbow'].includes(mode);
     }
 
-    // 判斷是否為雙色或多色背景（需加強目標粗外框以保持高辨識度）
+    // 判斷是否為雙色或多色背景
     function isComplexBgMode(mode) {
       return mode.startsWith('dual-') || mode.startsWith('multi-');
     }
@@ -838,7 +881,7 @@
       });
     }
 
-    // === 廣東話語音鼓勵（「好叻喎！」、「做得好！」） ===
+    // === 廣東話語音引擎（出現時提問 + 擊中後稱讚命名） ===
     let cantoneseVoice = null;
 
     function loadCantoneseVoice() {
@@ -855,34 +898,46 @@
       window.speechSynthesis.onvoiceschanged = loadCantoneseVoice;
     }
 
-    function speakPraise(customText) {
-      if (!('speechSynthesis' in window)) return;
+    function speakCantoneseText(text, pitch = 1.15) {
+      if (!('speechSynthesis' in window) || !text) return;
       window.speechSynthesis.cancel();
-      const phrases = ['好叻喎！', '做得好！'];
-      let text = customText;
-      if (!text) {
-        lastPraiseIndex = (lastPraiseIndex + 1) % phrases.length;
-        text = phrases[lastPraiseIndex];
-      }
       const utter = new SpeechSynthesisUtterance(text);
       utter.lang = 'zh-HK';
       if (cantoneseVoice) {
         utter.voice = cantoneseVoice;
       }
-      utter.rate = 0.92;
-      utter.pitch = 1.15;
+      utter.rate = 0.90;
+      utter.pitch = pitch;
       window.speechSynthesis.speak(utter);
     }
 
-    // === 繪製高對比幾何化 SVG 圖案（含太陽、笑臉、星星、愛心、蘋果、汽車、花朵、蝴蝶） ===
-    function getShapeSVG(shapeType, fgColor) {
-      let chosen = shapeType;
-      if (chosen === 'random') {
-        const pool = availableShapes.filter(s => s !== lastShape);
-        chosen = pool[Math.floor(Math.random() * pool.length)];
-      }
-      lastShape = chosen;
+    // 圖案出現時用語音提示尋找物件
+    function speakSpawnPrompt(shapeKey) {
+      if (!state.promptOnSpawn || !shapeKey) return;
+      const objName = shapeCantoneseNames[shapeKey] || '目標';
+      speakCantoneseText(`搵下${objName}喺邊度呀？`, 1.1);
+    }
 
+    // 擊中目標後稱讚並讀出物件名稱
+    function speakPraise(customText, shapeKey = null) {
+      if (customText) {
+        speakCantoneseText(customText, 1.18);
+        return;
+      }
+
+      const phrases = ['好叻喎！', '做得好！'];
+      lastPraiseIndex = (lastPraiseIndex + 1) % phrases.length;
+      const basePraise = phrases[lastPraiseIndex];
+
+      let text = basePraise;
+      if (state.sayObjectName && shapeKey && shapeCantoneseNames[shapeKey]) {
+        text = `${basePraise}係${shapeCantoneseNames[shapeKey]}呀！`;
+      }
+      speakCantoneseText(text, 1.18);
+    }
+
+    // === 繪製高對比幾何化 SVG 圖案 ===
+    function getShapeSVG(chosen, fgColor) {
       const isDarkFg = ['#000000', '#001845', '#0055FF', '#8B4513'].includes(fgColor.toUpperCase());
       const detailColor = isDarkFg ? '#FFFFFF' : '#000000';
       const isComplex = isComplexBgMode(state.bgMode);
@@ -1076,9 +1131,12 @@
           { x: Math.min(w - margin, w * 0.75), y: yBase }
         ];
 
-        positions.forEach((pos, idx) => {
-          createTargetElement(pos.x, pos.y, idx, true);
-        });
+        const createdTargets = positions.map((pos, idx) =>
+          createTargetElement(pos.x, pos.y, idx, true)
+        );
+        if (createdTargets[0]) {
+          speakSpawnPrompt(createdTargets[0].shapeKey);
+        }
         return;
       }
 
@@ -1086,7 +1144,7 @@
       if (state.difficulty === 3) {
         const targetPos = getRandomPosition(occupied, false);
         occupied.push(targetPos);
-        createTargetElement(targetPos.x, targetPos.y, 0, false);
+        const targetObj = createTargetElement(targetPos.x, targetPos.y, 0, false);
 
         for (let i = 0; i < 2; i++) {
           const dPos = getRandomPosition(occupied, false);
@@ -1100,6 +1158,7 @@
           dEl.innerHTML = getDistractorSVG(i % 2, distractorColor);
           gameArea.appendChild(dEl);
         }
+        speakSpawnPrompt(targetObj.shapeKey);
         return;
       }
 
@@ -1107,6 +1166,7 @@
       const isEdge = (state.difficulty === 5);
       const pos = getRandomPosition(occupied, isEdge);
       const targetObj = createTargetElement(pos.x, pos.y, 0, false, isEdge);
+      speakSpawnPrompt(targetObj.shapeKey);
 
       if (state.difficulty === 2) {
         startTrackingMotion(targetObj);
@@ -1117,6 +1177,8 @@
     function createTargetElement(x, y, seqIdx = 0, showSequenceUI = false, flashMode = false) {
       const targetSize = getTargetPixelSize();
       const currentColor = getCurrentFgColor();
+      const chosenShapeKey = resolveShapeKey(state.shape);
+
       const wrapper = document.createElement('div');
       wrapper.className = 'target-wrapper';
       const totalSize = targetSize + 40;
@@ -1130,7 +1192,7 @@
       graphic.style.filter = isComplexBgMode(state.bgMode)
         ? `drop-shadow(0 0 12px rgba(0,0,0,0.85))`
         : `drop-shadow(0 0 16px ${currentColor})`;
-      graphic.innerHTML = getShapeSVG(state.shape, currentColor);
+      graphic.innerHTML = getShapeSVG(chosenShapeKey, currentColor);
       wrapper.appendChild(graphic);
 
       if (showSequenceUI) {
@@ -1151,7 +1213,15 @@
         }
       }
 
-      const targetData = { el: wrapper, x, y, seqIdx, hit: false, color: currentColor };
+      const targetData = {
+        el: wrapper,
+        x,
+        y,
+        seqIdx,
+        hit: false,
+        color: currentColor,
+        shapeKey: chosenShapeKey
+      };
       state.activeTargets.push(targetData);
 
       const handleHit = (e) => {
@@ -1208,6 +1278,7 @@
       playSuccessSound();
       if (navigator.vibrate) navigator.vibrate(70);
 
+      // 序列模式：完成第一個後啟用第二個並語音提示第二個物件
       if (state.difficulty === 4 && state.sequenceIndex === 0) {
         targetData.el.remove();
         state.sequenceIndex = 1;
@@ -1217,6 +1288,7 @@
           const ring = document.createElement('div');
           ring.className = 'guide-ring';
           nextTarget.el.appendChild(ring);
+          speakSpawnPrompt(nextTarget.shapeKey);
         }
         return;
       }
@@ -1227,15 +1299,16 @@
       state.totalHits += 1;
       state.roundHits += 1;
 
+      const hitShapeKey = targetData.shapeKey;
       renderProgressDots();
       updateStatsUI();
       clearBoard();
 
       if (state.roundLimit > 0 && state.roundHits >= state.roundLimit) {
-        setTimeout(showRoundBreak, 450);
+        setTimeout(() => showRoundBreak(hitShapeKey), 450);
       } else {
-        speakPraise();
-        setTimeout(spawnRound, 650);
+        speakPraise(null, hitShapeKey);
+        setTimeout(spawnRound, 1300); // 留足語音完整讀出稱讚與物件名稱的時間
       }
     }
 
@@ -1278,10 +1351,13 @@
     });
 
     // === 回合結束休息獎勵畫面 ===
-    function showRoundBreak() {
+    function showRoundBreak(lastShapeKey = null) {
       state.isPaused = true;
       playFanfareSound();
-      speakPraise('好叻喎，做得好！完成一回合啦，休息一陣先！');
+      const objPart = (state.sayObjectName && lastShapeKey && shapeCantoneseNames[lastShapeKey])
+        ? `係${shapeCantoneseNames[lastShapeKey]}呀！`
+        : '';
+      speakPraise(`好叻喎，做得好！${objPart}完成一回合啦，休息一陣先！`);
 
       const avgRoundRt = state.roundReactionTimes.length
         ? (state.roundReactionTimes.reduce((a, b) => a + b, 0) / state.roundReactionTimes.length).toFixed(2)
@@ -1371,6 +1447,7 @@
 
     function openTeacherPanel() {
       state.isPaused = true;
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
       updateStatsUI();
       teacherPanel.style.display = 'flex';
     }
@@ -1395,7 +1472,7 @@
           let val = btn.dataset.val;
           if (['difficulty', 'sizeRatio', 'roundLimit'].includes(settingKey)) {
             val = Number(val);
-          } else if (settingKey === 'teacherLock') {
+          } else if (['teacherLock', 'sayObjectName', 'promptOnSpawn'].includes(settingKey)) {
             val = (val === 'true');
           }
           state[settingKey] = val;
